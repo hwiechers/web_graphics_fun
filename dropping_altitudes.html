@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Dropping Altitudes | Web Graphics Fun</title>
+        <style>
+            body {
+                padding: 20px;
+                margin: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+            svg {
+                position: fixed;
+                width: 600px;
+                height: 400px;
+                border: 1px solid black;
+            }
+
+            .vertex {
+                stroke: black;
+                stroke-width: 2px;
+                fill: lightskyblue;
+            }
+
+            .side {
+                stroke: black;
+                stroke-width: 2px;
+            }
+
+            .altitude, .right-angle-marker {
+                stroke-width: 2px;
+                stroke: darkgray;
+                fill: none;
+            }
+
+            .extended-line {
+                stroke: black;
+                stroke-width: 2px;
+                stroke-dasharray: 5px, 3px;
+                fill: none;
+            }
+
+        </style>
+        <script>
+            function main() {
+                const svgNS = "http://www.w3.org/2000/svg";
+                const localNS = "http://github.com/hwiechers";
+
+                const vertices = [
+                    {x: 300, y: 100, color: 'red' },
+                    {x: 450, y: 300, color: 'green' },
+                    {x: 150, y: 300, color: 'blue' } ];
+
+                const graphic = document.getElementById("graphic");
+
+                let draggingVertex = null;
+
+                document.addEventListener("mousedown", event => {
+                    if (event.target.tagName === "circle") {
+                        const index = event.target.getAttributeNS(localNS, "index");
+                        draggingVertex = vertices[index];
+                        event.preventDefault();
+                    }
+                });
+                document.addEventListener("mousemove", event => {
+                    if (draggingVertex !== null) {
+                        const svgRect = graphic.parentElement.getBoundingClientRect();
+                        draggingVertex.x = event.clientX - svgRect.left;
+                        draggingVertex.y = event.clientY - svgRect.top;
+                        redraw();
+                    }
+                });
+                document.addEventListener("mouseup", event => {
+                    draggingVertex = null;
+                });
+
+                function redraw() {
+                    while (graphic.firstChild) {
+                      graphic.removeChild(graphic.firstChild);
+                    }
+                    draw();
+                }
+
+                function draw() {
+
+                    function drawSides() {
+                        for (let i = 0; i < vertices.length; i++) {
+                            const from = vertices[i];
+                            const to = vertices[(i + 1) % vertices.length];
+                            const line = document.createElementNS(svgNS, 'line');
+                            line.setAttribute('x1', from.x);
+                            line.setAttribute('y1', from.y);
+                            line.setAttribute('x2', to.x);
+                            line.setAttribute('y2', to.y);
+                            line.setAttribute('class', 'side');
+                            graphic.appendChild(line);
+                        }
+                    }
+
+                    function drawVertices() {
+                        vertices.forEach((vertex, index) => {
+                            const circle = document.createElementNS(svgNS, 'circle');
+                            circle.setAttribute('cx', vertex.x);
+                            circle.setAttribute('cy', vertex.y);
+                            circle.setAttribute('r', 5);
+                            circle.setAttribute('class', 'vertex');
+                            circle.setAttributeNS(localNS, 'index', index);
+                            graphic.appendChild(circle);
+                        });
+                    }
+
+                    function drawAltitudes() {
+                        let trianglePath = "";
+                        for (vertex of vertices) {
+                            trianglePath += `${vertex.x},${vertex.y} `;
+                        }
+
+                        for (let i = 0; i < vertices.length; i++) {
+                            // We're dropping the perpendicular from the point c onto the line ab.
+                            const a = vertices[i];
+                            const b = vertices[(i + 1) % vertices.length];
+                            const c = vertices[(i + 2) % vertices.length];
+
+                            const dx = b.x - a.x;
+                            const dy = b.y - a.y;
+                            const abLength2 = dx * dx + dy * dy;
+                            const t = (dx * (c.x -a.x) + dy *(c.y - a.y)) / abLength2;
+                            const footX = a.x + t * dx;
+                            const footY = a.y + t * dy;
+
+                            const altitude = document.createElementNS(svgNS, 'line');
+                            altitude.setAttribute('x1', c.x);
+                            altitude.setAttribute('y1', c.y);
+                            altitude.setAttribute('x2', footX);
+                            altitude.setAttribute('y2', footY);
+                            altitude.setAttribute('class', 'altitude');
+
+
+                            let minDistance2 = Infinity;
+                            for (vertex of vertices) {
+                                const distance2 = (vertex.x - footX) * (vertex.x - footX) + (vertex.y - footY) * (vertex.y - footY);
+                                if (distance2 < minDistance2) {
+                                    minDistance2 = distance2;
+                                }
+                            }
+
+                            if (minDistance2 > 14 * 14) {
+                                const det = (a.x - footX) * (c.y - footY) - (c.x - footX) * (a.y - footY);
+                                altitude.setAttribute('marker-end', det > 0 ? 'url(#right-angle-alt)' : 'url(#right-angle)');
+                            }
+
+                            graphic.appendChild(altitude);
+
+                            if (t > 1 || t < 0) {
+                                const extendedLine = document.createElementNS(svgNS, 'line');
+                                extendedLine.setAttribute('x1', footX);
+                                extendedLine.setAttribute('y1', footY);
+                                extendedLine.setAttribute('x2', t > 1 ? b.x : a.x);
+                                extendedLine.setAttribute('y2', t > 1 ? b.y : a.y);
+                                extendedLine.setAttribute('class', 'extended-line');
+                                graphic.appendChild(extendedLine);
+                            }
+                        }
+                    }
+
+                    drawAltitudes();
+                    drawSides();
+                    drawVertices();
+                }
+
+                draw();
+            }
+
+            window.onload = main;
+        </script>
+    </head>
+    <body>
+        <h1>Dropping Altitudes</h1>
+        <p>This image draws a triangle with its altitudes.</p>
+        <p>Drag the vertices to move them.</p>
+        <svg>
+            <defs>
+                <marker id="right-angle" class="right-angle-marker"
+                    markerWidth="5" markerHeight="10"
+                    refX="5" refY="5" orient="auto">
+                    <polyline points="0,5 0,0 5,0" />
+                </marker>
+                <marker id="right-angle-alt" class="right-angle-marker"
+                    markerWidth="5" markerHeight="5"
+                    refX="5" refY="0" orient="auto">
+                    <polyline points="0,0 0,5 5,5" />
+                </marker>
+            </defs>
+            <g id="graphic">
+            </g>
+        </svg>
+    </body>
+</html>
