@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SVG Viewbox | Web Graphics Fun</title>
+        <style>
+            #container {
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            #container > div {
+                width: 500px;
+                margin: 10px;
+            }
+
+            fieldset {
+                display: inline-flex;
+                align-items: stretch;
+            }
+
+            fieldset > div {
+                display: flex;
+                align-items: center;
+                margin: 10px;
+            }
+
+            #none-div {
+                flex: 1;
+                border-right: dashed 1px black;
+                padding-right: 10px;
+            }
+
+            th {
+                font-weight: normal;
+            }
+
+            td, th {
+                text-align: center;
+            }
+
+            #markup {
+                font-size: 18px;
+                margin: 10px 0;
+            }
+
+            .image-container {
+                position: relative;
+                width: 500px;
+                height: 300px;
+                border: dashed 1px black;
+            }
+
+            #image {
+                border: solid 1px black;
+                margin: -1px;
+            }
+
+            #canvas {
+                width: 500px;
+                height: 300px;
+            }
+
+            .handle {
+                position: absolute;
+                border: solid 1px black;
+                background: yellow;
+                width: 10px;
+                height: 10px;
+            }
+
+            #viewbox-rect {
+                border: solid 1px black;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+        <script>
+            function main() {
+
+                function clampInt(value, min, max) {
+                    value = Math.max(min, value);
+                    value = Math.min(max, value);
+                    value = Math.round(value)
+                    return value;
+                }
+
+                const svgNS = "http://www.w3.org/2000/svg";
+                const fullWidth = 500;
+                const fullHeight = 300;
+
+                const initialViewBoxX = 50;
+                const initialViewBoxY = 50;
+                const initialViewBoxWidth = 200;
+                const initialViewBoxHeight = 200;
+
+                const form = document.getElementsByTagName("form")[0];
+                const widthSpan = document.getElementById("width");
+                const heightSpan = document.getElementById("height");
+                const viewBoxSpan = document.getElementById("viewBox-markup");
+                const preserveAspectRatioSpan = document.getElementById("preserveAspectRatio-markup");
+
+                const image = document.getElementById("image");
+                const resizeHandle = document.getElementById("resize-handle");
+
+                const canvas = document.getElementById("canvas");
+                const viewBoxRect = document.getElementById("viewbox-rect");
+                const viewBoxTLHandle = document.getElementById("viewbox-top-left-handle");
+                const viewBoxBRHandle = document.getElementById("viewbox-bottom-right-handle");
+
+                for (let i = 0; i < 100; i++) {
+                    const circle = document.createElementNS(svgNS, 'circle');
+                    circle.setAttribute('cx', fullWidth * Math.random());
+                    circle.setAttribute('cy', fullHeight * Math.random());
+                    circle.setAttribute('r', 50 * Math.random());
+                    circle.setAttribute('fill',
+                        `hsl(${360 * Math.random()}, 100%, 50%)`);
+                    canvas.appendChild(circle);
+                    image.appendChild(circle.cloneNode());
+                }
+
+                let resizingImage = false;
+                let resizingViewBoxTopLeft = false;
+                let resizingViewBoxBottomRight = false;
+
+                document.addEventListener("dragstart", event => {
+                    if (event.target.localName == "circle" ||
+                        event.target.localName == "rect" ||
+                        event.traget.localName == "svg") {
+                        event.preventDefault();
+                    }
+                });
+
+                resizeHandle.addEventListener("mousedown", event => {
+                    resizingImage = true;
+                });
+
+                viewBoxTLHandle.addEventListener("mousedown", event => {
+                    resizingViewBoxTopLeft = true;
+                });
+
+                viewBoxBRHandle.addEventListener("mousedown", event => {
+                    resizingViewBoxBottomRight = true;
+                });
+
+                document.addEventListener("mouseup", event => {
+                    resizingImage = false;
+                    resizingViewBoxTopLeft = false;
+                    resizingViewBoxBottomRight = false;
+                });
+
+                document.addEventListener("mousemove", event => {
+                    if (resizingImage) {
+                        const imageRect = image.getBoundingClientRect();
+                        let newWidth = clampInt(event.clientX - imageRect.left, 20, fullWidth);
+                        let newHeight = clampInt(event.clientY - imageRect.top, 20, fullHeight);
+
+                        image.width.baseVal.value = newWidth;
+                        image.height.baseVal.value = newHeight;
+
+                        width.innerText = newWidth;
+                        height.innerText = newHeight;
+
+                        resizeHandle.style.left = `${newWidth - 11}px`;
+                        resizeHandle.style.top = `${newHeight - 11}px`;
+                    }
+
+                    if (resizingViewBoxTopLeft) {
+                        const canvasRect = canvas.getBoundingClientRect();
+
+                        const oldX = parseInt(viewBoxRect.style.left);
+                        const oldY = parseInt(viewBoxRect.style.top);
+                        const width = parseInt(viewBoxRect.style.width);
+                        const height = parseInt(viewBoxRect.style.height);
+
+                        const newX = clampInt(event.clientX - canvasRect.left, -1, oldX + width - 20);
+                        const newY = clampInt(event.clientY - canvasRect.top, -1, oldY + height - 20);
+
+                        viewBoxRect.style.left = `${newX}px`;
+                        viewBoxRect.style.top = `${newY}px`;
+                        viewBoxRect.style.width = `${width - newX + oldX}px`;
+                        viewBoxRect.style.height = `${height - newY + oldY}px`;
+
+                        const newMarkup = `${newX + 1} ${newY + 1} ${width} ${height}`;
+                        image.setAttribute("viewBox", newMarkup);
+                        viewBoxSpan.innerText = newMarkup;
+                    }
+
+                    if (resizingViewBoxBottomRight) {
+                        const canvasRect = canvas.getBoundingClientRect();
+
+                        const x = parseInt(viewBoxRect.style.left);
+                        const y = parseInt(viewBoxRect.style.top);
+
+                        const newWidth = clampInt(
+                            event.clientX - canvasRect.left - x,
+                            20, fullWidth - x - 1);
+                        const newHeight = clampInt(
+                            event.clientY - canvasRect.top - y,
+                            20, fullHeight - y - 1);
+
+                        viewBoxRect.style.width = `${newWidth}px`;
+                        viewBoxRect.style.height = `${newHeight}px`;
+
+                        const newMarkup = `${x + 1} ${y + 1} ${newWidth} ${newHeight}`;
+                        image.setAttribute("viewBox", newMarkup);
+                        viewBoxSpan.innerText = newMarkup;
+                    }
+                });
+
+                form.addEventListener("change", event => {
+                    let newPreserveAspectRatio =
+                        document.querySelector('input[name="preserveAspectRatio"]:checked').value;
+                    let newMeetSlice =
+                        document.querySelector('input[name="meetSlice"]:checked').value;
+
+                    if (newPreserveAspectRatio === "none") {
+                        newPreserveAspectRatio = "none";
+                    } else {
+                        newPreserveAspectRatio += " " + newMeetSlice;
+                    }
+
+                    image.setAttribute("preserveAspectRatio", newPreserveAspectRatio);
+                    preserveAspectRatioSpan.innerText = newPreserveAspectRatio;
+                    for (element of document.querySelectorAll('input[name="meetSlice"]')) {
+                        element.disabled = newPreserveAspectRatio === "none";
+                    }
+                });
+            }
+
+            window.onload = main;
+        </script>
+    </head>
+    <body>
+        <h1>SVG Viewbox Demo</h1>
+
+        <p>This page demostrated the affects that the width/height and viewbox attributes have on an SVG image.</p>
+
+        <form autocomplete="off">
+            <fieldset>
+                <legend>preserveAspectRatio</legend>
+                <div id="none-div">
+                    <input type="radio" name="preserveAspectRatio" value="none" checked>None</input> <br/>
+                </div>
+
+                <div>
+                    <table>
+                        <tr><th></th><th>xMin</th><th>xMid</th><th>xMax</th></tr>
+                        <tr>
+                            <th>yMin</th>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMinYMin"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMidYMin"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMaxYMin"></input></td>
+                        </tr>
+                        <tr>
+                            <th>yMid</th>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMinYMid"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMidYMid"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMaxYMid"></input></td>
+                        </tr>
+                        <tr>
+                            <th>yMax</th>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMinYMax"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMidYMax"></input></td>
+                            <td><input type="radio" name="preserveAspectRatio" value="xMaxYMax"></input></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div>
+                    <input type="radio" name="meetSlice" value="meet" checked disabled>meet</input>
+                    <input type="radio" name="meetSlice" value="slice" disabled>slice</input>
+                </div>
+            </fieldset>
+        </form>
+
+        <div id="container">
+            <div>
+                <div id="markup"><code>&lt;svg width="<span id="width">200</span>" height="<span id="height">200</span>" <br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;viewBox="<span id="viewBox-markup">50 50 200 200</span>" <br />
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;preserveAspectRatio="<span id="preserveAspectRatio-markup">none</span>"&gt;<br />
+                        ...<br />
+                        &lt;/svg&gt;</code></div>
+            </div>
+            <div class="image-container">
+                <svg id="image" width="200" height="200" viewBox="50 50 200 200" preserveAspectRatio="none"></svg>
+                <div id="resize-handle" class="handle" style="top: 189px; left: 189px;"></div>
+            </div>
+            <div class="image-container">
+                <svg id="canvas"></svg>
+                <div id="viewbox-rect"
+                    style="position: absolute; top: 50px; left: 50px; width: 200px; height: 200px;">
+                    <div id="viewbox-top-left-handle" class="handle"
+                        style="top: -1px; left: -1px;">
+                    </div>
+                    <div id="viewbox-bottom-right-handle" class="handle"
+                        style="bottom: -1px; right: -1px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
