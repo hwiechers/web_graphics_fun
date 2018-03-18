@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Pythagoras' Theorem Interactive Demo</title>
+    <style>
+      svg {
+          width: 600px;
+          height: 600px;
+          border: 1px solid black;
+      }
+
+      #left-square, #left-area-swatch {
+        fill: red;
+        shape-rendering: crispEdges;
+        stroke: black;
+        stroke-width: 2px;
+      }
+
+      #bottom-square, #bottom-area-swatch {
+        fill: yellow;
+        stroke: black;
+        stroke-width: 2px;
+        shape-rendering: crispEdges;
+      }
+
+      #hypotenuse-square, #hypotenuse-area-swatch {
+        stroke: black;
+        stroke-width: 2px;
+        fill: #3333FF;
+      }
+
+      #right-angle-marker {
+          stroke-width: 2px;
+          stroke: darkgray;
+          fill: none;
+          shape-rendering: crispEdges;
+      }
+
+      .vertex {
+          stroke: black;
+          stroke-width: 2px;
+          fill: lightskyblue;
+      }
+
+      #top-vertex {
+        cursor: ns-resize;
+      }
+
+      #right-vertex {
+        cursor: ew-resize;
+      }
+
+      .unselectable {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      .ns-resize {
+        cursor: ns-resize;
+      }
+
+      .ns-resize #right-vertex {
+        cursor: inherit;
+      }
+
+      .ew-resize {
+        cursor: ew-resize;
+      }
+
+      .ew-resize #top-vertex {
+        cursor: inherit;
+      }
+    </style>
+    <script>
+      'use strict';
+
+      document.addEventListener('DOMContentLoaded', event => {
+
+        const bottomLeft = {x: 225, y: 375};
+        let top = 175
+        let right = 375;
+
+        const graphic = document.getElementById('graphic');
+
+        const topVertex = document.getElementById('top-vertex');
+        const rightVertex = document.getElementById('right-vertex');
+
+        const leftSquare = document.getElementById('left-square');
+        const bottomSquare = document.getElementById('bottom-square');
+        const hypotenuseSquare = document.getElementById('hypotenuse-square');
+        const rightAngleMarker = document.getElementById('right-angle-marker');
+
+        const leftArea = document.getElementById('left-area');
+        const bottomArea = document.getElementById('bottom-area');
+        const hypotenuseArea = document.getElementById('hypotenuse-area');
+
+        function clamp(value, min, max) {
+          if (value < min) {
+            return min;
+          }
+          if (value > max) {
+            return max;
+          }
+          return value;
+        }
+
+        function redraw() {
+
+          let height = bottomLeft.y - top;
+          let width = right - bottomLeft.x;
+
+          leftArea.textContent = (height / 50 * height / 50).toFixed(2);
+          bottomArea.textContent = (width / 50 * width / 50).toFixed(2);
+          hypotenuseArea.textContent = (height / 50 * height / 50 + width / 50 * width / 50).toFixed(2);
+
+          topVertex.setAttribute('cy', top);
+          rightVertex.setAttribute('cx', right);
+
+          leftSquare.setAttribute('points',
+            `${bottomLeft.x - height},${top} ` +
+            `${bottomLeft.x},${top} ` +
+            `${bottomLeft.x},${bottomLeft.y} ` +
+            `${bottomLeft.x - height},${bottomLeft.y}`);
+
+          bottomSquare.setAttribute('points',
+            `${bottomLeft.x},${bottomLeft.y} ` +
+            `${right},${bottomLeft.y} ` +
+            `${right},${bottomLeft.y + width} ` +
+            `${bottomLeft.x},${bottomLeft.y + width}`);
+
+          hypotenuseSquare.setAttribute('points',
+            `${bottomLeft.x},${top} ` +
+            `${bottomLeft.x + height},${top - width} ` +
+            `${right + height},${bottomLeft.y - width} ` +
+            `${right},${bottomLeft.y}`);
+
+          if (height * width / (height + width) < 15) {
+            rightAngleMarker.style.display = 'none';
+          } else {
+            rightAngleMarker.style.display = null;
+          }
+        }
+
+        let movingTop = false;
+        let movingRight = false;
+
+
+        topVertex.addEventListener('mousedown', event => {
+          movingTop = true;
+          document.body.classList.add('ns-resize');
+        });
+
+        rightVertex.addEventListener('mousedown', event => {
+          movingRight = true;
+          document.body.classList.add('ew-resize');
+        });
+
+        document.addEventListener('mousemove', event => {
+          if (movingTop) {
+            let rect = graphic.getBoundingClientRect();
+            top = clamp(event.clientY - rect.top, 10, bottomLeft.y - 10);
+          } else if (movingRight) {
+            let rect = graphic.getBoundingClientRect();
+            right = clamp(event.clientX - rect.left,
+                bottomLeft.x + 10,
+                rect.right - rect.left - 10);
+          }
+
+          redraw();
+        });
+
+        document.addEventListener('mouseup', event => {
+          movingTop = false;
+          movingRight = false;
+          document.body.classList.remove('ns-resize');
+          document.body.classList.remove('ew-resize');
+        });
+
+      });
+
+    </script>
+  </head>
+  <body>
+    <h1>Pythagoras' Theorem Interactive Demo</h1>
+    <p>Drag the vertices to resize the triangle.</p>
+    <p>The areas are calculated as 50 pixels is 1 unit.</p>
+    <svg id="graphic" class="unselectable">
+      <polyline id="right-angle-marker" points="225,365 235,365 235,375" />
+      <polygon id="left-square" points="25,175 225,175 225,375 25,375" />
+      <polygon id="bottom-square" points="225,375 375,375 375,525 225,525" />
+      <polygon id="hypotenuse-square" points="225,175 425,25 575,225 375,375" />
+      <circle id="top-vertex" class="vertex" cx="225" cy="175" r="5" />
+      <circle id="right-vertex" class="vertex" cx="375" cy="375" r="5" />
+
+      <rect id="left-area-swatch" x="25" y="480" width="25" height="25" />
+      <rect id="bottom-area-swatch" x="25" y="515" width="25" height="25" />
+      <rect id="hypotenuse-area-swatch" x="25" y="550" width="25" height="25" />
+      <text id="left-area" x="55" y="498">16.00</text>
+      <text id="bottom-area" x="55" y="533">9.00</text>
+      <text id="hypotenuse-area" x="55" y="568">25.00</text>
+    </svg>
+  </body>
+</html>
