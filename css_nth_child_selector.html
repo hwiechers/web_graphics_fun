@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CSS :nth-child() Selector</title>
+    <meta charset=utf-8 />
+    <style>
+      section {
+        margin: 25px 0 0 0;
+      }
+
+      #explanation {
+        width: 100%;
+        max-width: 45em;
+      }
+
+      #controls {
+        display: inline-grid;
+        font-size: 48px;
+        font-family: monospace;
+        grid-template-columns: 3ex auto 3.5ex;
+        grid-template-rows: repeat(3, auto);
+      }
+
+      #controls > * {
+        justify-self: end;
+      }
+
+      #multiplier {
+        grid-column: 1 / 1;
+        grid-row: 2 / 3;
+        justify-self: end;
+      }
+
+      #multiplier-dec {
+        grid-column: 1 / 2;
+        grid-row: 3 / 4;
+      }
+
+      #multiplier-inc {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2
+      }
+
+      #n {
+        grid-column: 2 / 3;
+        grid-row: 2 / 3
+      }
+
+      #offset {
+        grid-column: 3 / 4;
+        grid-row: 2 / 3
+      }
+
+      #offset-inc {
+        grid-column: 3 / 4;
+        grid-row: 1 / 2
+      }
+
+      #offset-dec {
+        grid-column: 3 / 4;
+        grid-row: 3 / 4
+      }
+
+      table {
+        font-size: 16px;
+      }
+
+      table td {
+        text-align: right;
+        min-width: 48px;
+        height: 24px;
+      }
+
+      #outcome {
+        display: flex;
+        flex-flow: row wrap;
+      }
+
+      #outcome > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ddd;
+        text-align: center;
+        font-size: 16px;
+        min-width: 48px;
+        min-height: 48px;
+      }
+
+      .unselectable {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+    </style>
+    <style>
+      #outcome > div:nth-child(2n+1) {
+        background: lightblue;
+      }
+    </style>
+    <script>
+      'use strict';
+      document.addEventListener('DOMContentLoaded', event => {
+        const limit = 25;
+
+        let multiplier = 2;
+        let offset = 1;
+
+        const multiplierInc = document.getElementById('multiplier-inc');
+        const multiplierDec = document.getElementById('multiplier-dec');
+        const multiplierElem = document.getElementById('multiplier');
+
+        const offsetInc = document.getElementById('offset-inc');
+        const offsetDec = document.getElementById('offset-dec');
+        const offsetElem = document.getElementById('offset');
+
+        const nthChildRow = document.getElementById('nth-child-row');
+
+        function update() {
+          let formattedOffset = formatOffset(offset);
+          let expression = `${multiplier}n ${formattedOffset}`;
+
+          multiplierElem.innerText = multiplier;
+          offsetElem.innerText = formattedOffset;
+          nthChildRow.cells[0].innerText = expression;
+
+          for (let i = 1; i < nthChildRow.cells.length - 1; i++) {
+            nthChildRow.cells[i].innerText = multiplier * (i - 1) + offset;
+          };
+
+          document.styleSheets[1].deleteRule(0);
+          document.styleSheets[1].insertRule(
+            `#outcome > div:nth-child(${expression}) { background: lightblue; }`
+          );
+        }
+
+        function formatOffset(value) {
+          let result = "";
+
+          if (value < 0) {
+            result += "-";
+          } else {
+            result += "+";
+          }
+
+          let absValue = Math.abs(value);
+          if (absValue < 10) {
+            result += " ";
+          }
+
+          result += absValue.toString();
+
+          return result;
+        }
+
+        multiplierInc.addEventListener('click', event => { 
+          if (multiplier >= limit) {
+            return;
+          }
+          multiplier += 1;
+          update();
+        });
+
+        multiplierDec.addEventListener('click', event => {
+          if (multiplier <= -limit) {
+            return;
+          }
+          multiplier -= 1;
+          update();
+        });
+
+        offsetInc.addEventListener('click', event => {
+          if (offset >= limit) {
+            return;
+          }
+          offset += 1;
+          update();
+        });
+
+        offsetDec.addEventListener('click', event => {
+          if (offset <= -limit) {
+            return;
+          }
+          offset -= 1;
+          update();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <svg style="display: none;">
+      <symbol id=increment-arrow viewbox="0,0 100,100">
+        <polygon points="0,87 50,0 100,87" />
+      </symbol>
+      <symbol id=decrement-arrow viewbox="0,0 100,100">
+        <polygon points="0,0 50,87 100,0" />
+      </symbol>
+    </svg>
+    <h1>CSS :nth-child() Selector</h1>
+
+    <section id=explanation>
+      <p>This is a demostration of how the CSS <code>:nth-child</code>
+      selector works. The blue boxes are selected by the rule
+      <code>:nth-child(&lt;expr&gt;)</code> where the
+      <code>&lt;expr&gt;</code> is shown at the top.</p>
+      <p>Use the arrows to change the numbers.</p>
+    </section>
+
+    <section id=controls class=unselectable>
+      <span id=multiplier>2</span>
+      <svg id=multiplier-inc width="1ex" height="1ex">
+        <use xlink:href=#increment-arrow />
+      </svg>
+      <svg id=multiplier-dec width="1ex" height="1ex">
+        <use xlink:href=#decrement-arrow />
+      </svg>
+      <span id=n>n</span>
+      <svg id=offset-inc width="1ex" height="1ex">
+        <use xlink:href=#increment-arrow />
+      </svg>
+      <span id=offset>+ 1</span>
+      <svg id=offset-dec width="1ex" height="1ex">
+        <use xlink:href=#decrement-arrow />
+      </svg>
+    </section>
+
+    <section>
+    <table>
+      <tr>
+        <th scope=row>n</th>
+        <td>0</td>
+        <td>1</td>
+        <td>2</td>
+        <td>3</td>
+        <td>4</td>
+        <td>5</td>
+        <td>6</td>
+        <td>7</td>
+        <td>...</td>
+      </tr>
+      <tr id=nth-child-row>
+        <th scope=row>2n + 1</th>
+        <td>1</td>
+        <td>3</td>
+        <td>5</td>
+        <td>7</td>
+        <td>9</td>
+        <td>11</td>
+        <td>13</td>
+        <td>15</td>
+        <td>...</td>
+      </tr>
+    </table>
+    </section>
+
+    <section id=outcome>
+      <div>1</div>
+      <div>2</div>
+      <div>3</div>
+      <div>4</div>
+      <div>5</div>
+      <div>6</div>
+      <div>7</div>
+      <div>8</div>
+      <div>9</div>
+      <div>10</div>
+      <div>11</div>
+      <div>12</div>
+      <div>13</div>
+      <div>14</div>
+      <div>15</div>
+      <div>16</div>
+      <div>17</div>
+      <div>18</div>
+      <div>19</div>
+      <div>20</div>
+      <div>21</div>
+      <div>22</div>
+      <div>23</div>
+      <div>24</div>
+      <div>25</div>
+      <div>26</div>
+      <div>27</div>
+      <div>28</div>
+      <div>29</div>
+      <div>30</div>
+      <div>31</div>
+      <div>32</div>
+      <div>33</div>
+      <div>34</div>
+      <div>35</div>
+      <div>36</div>
+      <div>37</div>
+      <div>38</div>
+      <div>39</div>
+      <div>40</div>
+      <div>41</div>
+      <div>42</div>
+      <div>43</div>
+      <div>44</div>
+      <div>45</div>
+      <div>46</div>
+      <div>47</div>
+      <div>48</div>
+      <div>49</div>
+      <div>50</div>
+    </section>
+  </body>
+</html>
