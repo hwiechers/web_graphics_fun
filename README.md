@@ -8,3 +8,4 @@ self-contained page with no external dependencies.
 * [Triangle Altitudes](https://hwiechers.github.io/web_graphics_fun/triangle_altitudes)
 * [SVG Viewbox](https://hwiechers.github.io/web_graphics_fun/svg_viewbox)
 * [Pythagorus' Theorem](https://hwiechers.github.io/web_graphics_fun/pythagorus_theorem)
+* [CSS :nth-child() Selector](https://hwiechers.github.io/web_graphics_fun/css_nth_child_selector)
